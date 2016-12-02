@@ -2,103 +2,51 @@
 
 #include "sio_client.h"
 #include "SocketIOClientTypes.h"
-#include "SIOJsonObject.h"
-#include "SIOJsonValue.h"
-#include "SIOJConvert.h"
-#include "Components/ActorComponent.h"
-#include "SocketIOClientComponent.generated.h"
 
-UCLASS(ClassGroup = "Networking", meta = (BlueprintSpawnableComponent))
-class SOCKETIOCLIENT_API USocketIOClientComponent : public UActorComponent
+class SOCKETIOCLIENT_API FSIOClient
 {
-	GENERATED_UCLASS_BODY()
-public:
 
+public:
+	FSIOClient();
+	~FSIOClient();
+
+	
 	//Async events
 
 	/** Event received on socket.io connection established. */
-	UPROPERTY(BlueprintAssignable, Category = "SocketIO Events")
-	FSIOCOpenEventSignature OnConnected;
+	FSIOCOpenEventSignatureBase OnConnected;
 
 	/** Event received on socket.io connection disconnected. */
-	UPROPERTY(BlueprintAssignable, Category = "SocketIO Events")
-	FSIOCCloseEventSignature OnDisconnected;
+	FSIOCCloseEventSignatureBase OnDisconnected;
 
 	/** Event received on having joined namespace. */
-	UPROPERTY(BlueprintAssignable, Category = "SocketIO Events")
-	FSIOCSocketEventSignature OnSocketNamespaceConnected;
+	FSIOCSocketEventSignatureBase OnSocketNamespaceConnected;
 
 	/** Event received on having left namespace. */
-	UPROPERTY(BlueprintAssignable, Category = "SocketIO Events")
-	FSIOCSocketEventSignature OnSocketNamespaceDisconnected;
+	FSIOCSocketEventSignatureBase OnSocketNamespaceDisconnected;
 
 	/** Event received on connection failure. */
-	UPROPERTY(BlueprintAssignable, Category = "SocketIO Events")
-	FSIOCEventSignature OnFail;
+	FSIOCEventSignatureBase OnFail;
 
 	/** On bound event received. */
-	UPROPERTY(BlueprintAssignable, Category = "SocketIO Events")
-	FSIOCEventJsonSignature On;
+	FSIOCEventJsonSignatureBase On;
 
 	/** Default connection address string in form e.g. http://localhost:80. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SocketIO Properties")
 	FString AddressAndPort;
 
-	/** If true will auto-connect on begin play to address specified in AddressAndPort. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SocketIO Properties")
-	bool ShouldAutoConnect;
-
 	/** When connected this session id will be valid and contain a unique Id. */
-	UPROPERTY(BlueprintReadWrite, Category = "SocketIO Properties")
 	FString SessionId;
 
 	/**
-	* Connect to a socket.io server, optional method if auto-connect is set to true.
+	* Connect to a socket.io server, optional if auto-connect is set
 	*
 	* @param AddressAndPort	the address in URL format with port
 	*/
-	UFUNCTION(BlueprintCallable, Category = "SocketIO Functions")
 	void Connect(const FString& InAddressAndPort);
-
-	/**
-	* Disconnect from current socket.io server, optional method.
-	*
-	* @param AddressAndPort	the address in URL format with port
-	*/
-	UFUNCTION(BlueprintCallable, Category = "SocketIO Functions")
 	void Disconnect();
-
 	void SyncDisconnect();
 
-	//
-	//Blueprint Functions
-	//
-
-	/**
-	* Emit an event with a JsonValue message
-	*
-	* @param Name		Event name
-	* @param Message	SIOJJsonValue
-	* @param Namespace	Namespace within socket.io
-	*/
-	UFUNCTION(BlueprintCallable, Category = "SocketIO Functions")
 	void Emit(const FString& EventName, USIOJsonValue* Message = nullptr, const FString& Namespace = FString(TEXT("/")));
-
-	/**
-	* Emit an event with a JsonValue message with a callback function defined by CallBackFunctionName
-	*
-	* @param Name					Event name
-	* @param Message				SIOJsonValue
-	* @param CallbackFunctionName	Name of the optional callback function with signature (String, SIOJsonValue)
-	* @param Target					CallbackFunction target object, typically self where this is called.
-	* @param Namespace				Namespace within socket.io
-	*/
-	UFUNCTION(BlueprintCallable, Category = "SocketIO Functions")
-	void EmitWithCallBack(	const FString& EventName,
-							USIOJsonValue* Message = nullptr,
-							const FString& CallbackFunctionName = FString(""),
-							UObject* Target = nullptr,
-							const FString& Namespace = FString(TEXT("/")));
 
 	/**
 	* Bind an event, then respond to it with 'On' multi-cast delegate
@@ -106,29 +54,10 @@ public:
 	* @param EventName	Event name
 	* @param Namespace	Optional namespace, defaults to default namespace
 	*/
-	UFUNCTION(BlueprintCallable, Category = "SocketIO Functions")
 	void BindEvent(const FString& EventName, const FString& Namespace = FString(TEXT("/")));
 
-
 	/**
-	* Bind an event to a function with the given name.
-	* Expects a String message signature which can be decoded from JSON into SIOJsonObject
-	*
-	* @param EventName		Event name
-	* @param FunctionName	The function that gets called when the event is received
-	* @param Target			Optional, defaults to owner. Change to delegate to another class.
-	*/
-	UFUNCTION(BlueprintCallable, Category = "SocketIO Functions")
-	void BindEventToFunction(	const FString& EventName,
-								const FString& FunctionName,
-								UObject* Target,
-								const FString& Namespace = FString(TEXT("/")));
-	//
-	//C++ functions
-	//
-
-	/**
-	* Emit an event with a JsonValue message 
+	* Emit an event with a JsonValue message
 	*
 	* @param EventName				Event name
 	* @param Message				FJsonValue
@@ -241,10 +170,10 @@ public:
 	* @param CallbackFunction		Optional callback TFunction with raw signature
 	* @param Namespace				Optional Namespace within socket.io
 	*/
-	void EmitRaw(	const FString& EventName,
-					const sio::message::list& MessageList = nullptr,
-					TFunction<void(const sio::message::list&)> CallbackFunction = nullptr,
-					const FString& Namespace = FString(TEXT("/")));
+	void EmitRaw(const FString& EventName,
+				 const sio::message::list& MessageList = nullptr,
+				 TFunction<void(const sio::message::list&)> CallbackFunction = nullptr,
+				 const FString& Namespace = FString(TEXT("/")));
 
 	/**
 	* Emit an optimized binary message
@@ -255,7 +184,7 @@ public:
 	* @param Namespace				Optional Namespace within socket.io
 	*/
 	void EmitRawBinary(const FString& EventName, uint8* Data, int32 DataLength, const FString& Namespace = FString(TEXT("/")));
-	
+
 
 	/**
 	* Call function callback on receiving socket event. C++ only.
@@ -264,9 +193,9 @@ public:
 	* @param TFunction	Lambda callback, JSONValue
 	* @param Namespace	Optional namespace, defaults to default namespace
 	*/
-	void OnNativeEvent(	const FString& EventName,
-						TFunction< void(const FString&, const TSharedPtr<FJsonValue>&)> CallbackFunction,
-						const FString& Namespace = FString(TEXT("/")));
+	void OnNativeEvent(const FString& EventName,
+					   TFunction< void(const FString&, const TSharedPtr<FJsonValue>&)> CallbackFunction,
+					   const FString& Namespace = FString(TEXT("/")));
 
 	/**
 	* Call function callback on receiving raw event. C++ only.
@@ -285,17 +214,11 @@ public:
 	* @param TFunction	Lambda callback, raw flavor
 	* @param Namespace	Optional namespace, defaults to default namespace
 	*/
-	void OnBinaryEvent(	const FString& EventName,
-						TFunction< void(const FString&, const TArray<uint8>&)> CallbackFunction,
-						const FString& Namespace = FString(TEXT("/")));
-
-	virtual void InitializeComponent() override;
-	virtual void UninitializeComponent() override;
+	void OnBinaryEvent(const FString& EventName,
+					   TFunction< void(const FString&, const TArray<uint8>&)> CallbackFunction,
+					   const FString& Namespace = FString(TEXT("/")));
 
 protected:
-
-	bool CallBPFunctionWithResponse(UObject* Target, const FString& FunctionName, TArray<TSharedPtr<FJsonValue>> Response);
-	bool CallBPFunctionWithMessage(UObject* Target, const FString& FunctionName, TSharedPtr<FJsonValue> Message);
-
 	sio::client PrivateClient;
+
 };

@@ -189,7 +189,7 @@ void USocketIOClientComponent::EmitWithCallBack(const FString& EventName, USIOJs
 			JsonMessage = MakeShareable(new FJsonValueNull);
 		}
 
-		EmitNative(EventName, JsonMessage, [&, Target, CallbackFunctionName, this](auto Response)
+		EmitNative(EventName, JsonMessage, [&, Target, CallbackFunctionName, this](TArray<TSharedPtr<FJsonValue>> Response)
 		{
 			CallBPFunctionWithResponse(Target, CallbackFunctionName, Response);
 		}, Namespace);
